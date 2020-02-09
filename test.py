@@ -84,12 +84,15 @@ def test_run():
             agent_action_index, agent_action = dqn_agent.get_action(state)
             # Update state tracker with the agent's action
             state_tracker.update_state_agent(agent_action)
+            # print('agent: {}'.format(agent_action))
+
             # User takes action given agent action
             user_action, reward, done, success = user.step(agent_action)
+            # print('Response: {}'.format(user_action))
             ep_reward += reward
-            if not done:
-                # Infuse error into semantic frame level of user action
-                emc.infuse_error(user_action)
+            # if not done:
+            #     # Infuse error into semantic frame level of user action
+            #     emc.infuse_error(user_action)
             # Update state tracker with user action
             state_tracker.update_state_user(user_action)
             # Grab "next state" as state

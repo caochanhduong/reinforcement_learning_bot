@@ -5,7 +5,7 @@ from state_tracker import StateTracker
 import pickle, argparse, json, math
 from utils import remove_empty_slots
 from user import User
-
+import json
 
 if __name__ == "__main__":
     # Can provide constants file path in args OR run it as is and change 'CONSTANTS_FILE_PATH' below
@@ -43,16 +43,16 @@ if __name__ == "__main__":
 
     # Load movie DB
     # Note: If you get an unpickling error here then run 'pickle_converter.py' and it should fix it
-    database = pickle.load(open(DATABASE_FILE_PATH, 'rb'), encoding='latin1')
+    database = json.load(open(DATABASE_FILE_PATH, 'rb'), encoding='utf-8')[0]
 
     # Clean DB
     remove_empty_slots(database)
 
     # Load movie dict
-    db_dict = pickle.load(open(DICT_FILE_PATH, 'rb'), encoding='latin1')
+    db_dict = json.load(open(DICT_FILE_PATH, 'rb'), encoding='utf-8')[0]
 
     # Load goal File
-    user_goals = pickle.load(open(USER_GOALS_FILE_PATH, 'rb'), encoding='latin1')
+    user_goals = json.load(open(USER_GOALS_FILE_PATH, 'rb'), encoding='utf-8')
 
     # Init. Objects
     if USE_USERSIM:

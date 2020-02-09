@@ -356,7 +356,7 @@ class UserSimulator:
         # TEMP: ----
         assert self.state['history_slots'][self.default_key] != 'no match available'
 
-        match = copy.deepcopy(self.database[int(self.state['history_slots'][self.default_key])])
+        match = copy.deepcopy(self.database[str(self.state['history_slots'][self.default_key])])
 
         for key, value in self.goal['inform_slots'].items():
             assert value != None
