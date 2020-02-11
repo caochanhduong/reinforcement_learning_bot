@@ -1,8 +1,12 @@
 from collections import defaultdict
 from dialogue_config import no_query_keys, usersim_default_key
 import copy
+from pymongo import MongoClient
 
 
+client = MongoClient()
+client = MongoClient('mongodb://caochanhduong:bikhungha1@ds261626.mlab.com:61626/activity?retryWrites=false')
+db = client.activity
 class DBQuery:
     """Queries the database for the state tracker."""
 
@@ -151,7 +155,7 @@ class DBQuery:
         inform_items = frozenset(current_informs.items())
         # A dict of the inform keys and their counts as stored (or not stored) in the cached_db_slot
         cache_return = self.cached_db_slot[inform_items]
-
+        temp_current_informs=copy.deepcopy(current_informs)
         if cache_return:
             return cache_return
 
@@ -160,24 +164,21 @@ class DBQuery:
         db_results = {key: 0 for key in current_informs.keys()}
         db_results['matching_all_constraints'] = 0
 
-        for id in self.database.keys():
-            all_slots_match = True
-            for CI_key, CI_value in current_informs.items():
-                # Skip if a no query item and all_slots_match stays true
-                if CI_key in self.no_query:
-                    continue
-                # If anything all_slots_match stays true AND the specific key slot gets a +1
-                if CI_value == 'anything':
-                    db_results[CI_key] += 1
-                    continue
-                if CI_key in self.database[id].keys():
-                    if CI_value.lower() == self.database[id][CI_key].lower():
-                        db_results[CI_key] += 1
-                    else:
-                        all_slots_match = False
-                else:
-                    all_slots_match = False
-            if all_slots_match: db_results['matching_all_constraints'] += 1
+        # for id in self.database.keys():
+        # all_slots_match = True
+        for CI_key, CI_value in current_informs.items():
+        # Skip if a no query item and all_slots_match stays true
+            if CI_key in self.no_query:
+                continue
+            # If anything all_slots_match stays true AND the specific key slot gets a +1
+            if CI_value == 'anything':
+                db_results[CI_key] = db.activities.count()
+                del temp_current_informs[CI_key]
+                continue
+            db_results[CI_key]=db.activities.count({CI_key:CI_value.lower()})
+            print(CI_key)
+            print(db_results[CI_key])
+        db_results['matching_all_constraints'] = db.activities.count(temp_current_informs)
 
         # update cache (set the empty dict)
         self.cached_db_slot[inform_items].update(db_results)
