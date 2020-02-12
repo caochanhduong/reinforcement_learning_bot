@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_pymongo import PyMongo
 from flask_cors import CORS
+import re
 app = Flask(__name__)
 CORS(app)
 
@@ -60,6 +61,11 @@ def get_api_all_activity():
         break
     # print(mongo.db.activities.find({}))
     return {"code":200,"data":list_all_activity}
+@app.route('/api/get-db-results', methods=['GET'])
+def get_db_results():
+    input_data = request.get_json(force=True)
+    key = input_data["key"]
+    subDict = input_data["subdict"]
 
 if __name__ == '__main__':
     app.run()

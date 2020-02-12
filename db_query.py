@@ -1,6 +1,15 @@
 from collections import defaultdict
 from dialogue_config import no_query_keys, usersim_default_key
 import copy
+from flask import Flask, request, jsonify
+from flask_pymongo import PyMongo
+from flask_cors import CORS
+import re
+app = Flask(__name__)
+CORS(app)
+
+app.config["MONGO_URI"] = "mongodb://caochanhduong:bikhungha1@ds261626.mlab.com:61626/activity?retryWrites=false"
+mongo = PyMongo(app)
 
 
 class DBQuery:
@@ -112,27 +121,33 @@ class DBQuery:
         # else continue on
 
         available_options = {}
-        for id in self.database.keys():
-            current_option_dict = self.database[id]
-            # First check if that database item actually contains the inform keys
-            # Note: this assumes that if a constraint is not found in the db item then that item is not a match
-            if len(set(new_constraints.keys()) - set(self.database[id].keys())) == 0:
-                match = True
-                # Now check all the constraint values against the db values and if there is a mismatch don't store
-                for k, v in new_constraints.items():
-                    if str(v).lower() != str(current_option_dict[k]).lower():
-                        match = False
-                if match:
-                    # Update cache
-                    self.cached_db[inform_items].update({id: current_option_dict})
-                    available_options.update({id: current_option_dict})
+        results = mongo.db.activities.find(new_constraints)
+        for result in results:
+            available_options.update({str(result['_id']):result})
+            self.cached_db[inform_items].update({str(result['_id']): result})
+
+
+
+        # for id in self.database.keys():
+        #     current_option_dict = self.database[id]
+        #     # First check if that database item actually contains the inform keys
+        #     # Note: this assumes that if a constraint is not found in the db item then that item is not a match
+        #     if len(set(new_constraints.keys()) - set(self.database[id].keys())) == 0:
+        #         match = True
+        #         # Now check all the constraint values against the db values and if there is a mismatch don't store
+        #         for k, v in new_constraints.items():
+        #             if str(v).lower() != str(current_option_dict[k]).lower():
+        #                 match = False
+        #         if match:
+        #             # Update cache
+        #             self.cached_db[inform_items].update({id: current_option_dict})
+        #             available_options.update({id: current_option_dict})
 
         # if nothing available then set the set of constraint items to none in cache
         if not available_options:
             self.cached_db[inform_items] = None
 
         return available_options
-
     def get_db_results_for_slots(self, current_informs):
         """
         Counts occurrences of each current inform slot (key and value) in the database items.
@@ -183,3 +198,6 @@ class DBQuery:
         self.cached_db_slot[inform_items].update(db_results)
         assert self.cached_db_slot[inform_items] == db_results
         return db_results
+
+# db = DBQuery(None)
+# print(db.get_db_results({"district":"bình thạnh", "ward":"hưng thạnh"}))
