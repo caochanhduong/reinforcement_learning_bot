@@ -117,7 +117,12 @@ class DBQuery:
         # Filter non-queryable items and keys with the value 'anything' since those are inconsequential to the constraints
         new_constraints = {k: v for k, v in constraints.items() if k not in self.no_query and v is not 'anything'}
 
-        inform_items = frozenset(new_constraints.items())
+        tuple_new_constraint=copy.deepcopy(new_constraints)
+        print(tuple_new_constraint)
+        inform_items ={k:tuple(v) for k,v in tuple_new_constraint.items()}.items()
+        inform_items = frozenset(inform_items)
+
+        # inform_items = frozenset(new_constraints.items())
         cache_return = self.cached_db[inform_items]
 
         if cache_return == None:
@@ -172,8 +177,13 @@ class DBQuery:
         """
 
         # The items (key, value) of the current informs are used as a key to the cached_db_slot
-        inform_items = frozenset(current_informs.items())
-        # A dict of the inform keys and their counts as stored (or not stored) in the cached_db_slot
+        # print()
+        print(type(self.cached_db_slot))
+        tuple_current_informs=copy.deepcopy(current_informs)
+        print(tuple_current_informs)
+        inform_items ={k:tuple(v) for k,v in tuple_current_informs.items()}.items()
+        inform_items = frozenset(inform_items)
+        # # A dict of the inform keys and their counts as stored (or not stored) in the cached_db_slot
         cache_return = self.cached_db_slot[inform_items]
         temp_current_informs=copy.deepcopy(current_informs)
         if cache_return:
@@ -195,12 +205,12 @@ class DBQuery:
                 db_results[CI_key] = self.db.activities.count()
                 del temp_current_informs[CI_key]
                 continue
-            db_results[CI_key]=self.db.activities.count({CI_key:CI_value.lower()})
-            # print(CI_key)
-            # print(db_results[CI_key])
+            db_results[CI_key]=self.db.activities.count(self.convert_to_regex_constraint({CI_key:CI_value}))
+            print(CI_key)
+            print(db_results[CI_key])
             
-        current_informs_constraint={k:v.lower() for k,v in temp_current_informs.items()}
-        db_results['matching_all_constraints'] = self.db.activities.count(temp_current_informs)
+        # current_informs_constraint={k:v.lower() for k,v in temp_current_informs.items()}
+        db_results['matching_all_constraints'] = self.db.activities.count(self.convert_to_regex_constraint(temp_current_informs))
         
         # update cache (set the empty dict)
         self.cached_db_slot[inform_items].update(db_results)
@@ -214,5 +224,8 @@ class DBQuery:
                 list_pat.append(re.compile(".*{0}.*".format(value)))
             regex_constraint_dict[k] = {"$all":list_pat}
         return regex_constraint_dict
-# db = DBQuery(None)
-# print(db.convert_to_regex_constraint({"district":["bình thạnh", "thủ đức"], "ward":["hưng thạnh"]}))
+# from pymongo import MongoClient
+# client = MongoClient('mongodb://caochanhduong:bikhungha1@ds261626.mlab.com:61626/activity?retryWrites=false')
+# database = client.activity
+# dbquery = DBQuery(database)
+# print(dbquery.get_db_results({"works":["tán gái","cua gái"], "ward":["hưng thạnh"]}))
