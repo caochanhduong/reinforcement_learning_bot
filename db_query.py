@@ -129,7 +129,8 @@ class DBQuery:
         # else continue on
 
         available_options = {}
-        results = self.db.activities.find(new_constraints)
+        regex_constraint = self.convert_to_regex_constraint(new_constraints)
+        results = self.db.activities.find(regex_constraint)
         for result in results:
             available_options.update({str(result['_id']):result})
             self.cached_db[inform_items].update({str(result['_id']): result})
@@ -205,6 +206,13 @@ class DBQuery:
         self.cached_db_slot[inform_items].update(db_results)
         assert self.cached_db_slot[inform_items] == db_results
         return db_results
-
+    def convert_to_regex_constraint(self, constraints):
+        regex_constraint_dict = {}
+        for k,values in constraints.items():
+            list_pat = []
+            for value in values:
+                list_pat.append(re.compile(".*{0}.*".format(value)))
+            regex_constraint_dict[k] = {"$all":list_pat}
+        return regex_constraint_dict
 # db = DBQuery(None)
-# print(db.get_db_results({"district":"bình thạnh", "ward":"hưng thạnh"}))
+# print(db.convert_to_regex_constraint({"district":["bình thạnh", "thủ đức"], "ward":["hưng thạnh"]}))
