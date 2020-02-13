@@ -1,12 +1,25 @@
 from collections import defaultdict
 from dialogue_config import no_query_keys, usersim_default_key
 import copy
+
+from flask import Flask, request, jsonify
+from flask_pymongo import PyMongo
+from flask_cors import CORS
+import re
 from pymongo import MongoClient
 
+# app = Flask(__name__)
+# CORS(app)
 
-client = MongoClient()
-client = MongoClient('mongodb://caochanhduong:bikhungha1@ds261626.mlab.com:61626/activity?retryWrites=false')
-db = client.activity
+# app.config["MONGO_URI"] = "mongodb://caochanhduong:bikhungha1@ds261626.mlab.com:61626/activity?retryWrites=false"
+# mongo = PyMongo(app)
+
+
+
+
+# client = MongoClient()
+# client = MongoClient('mongodb://caochanhduong:bikhungha1@ds261626.mlab.com:61626/activity?retryWrites=false')
+# db = client.activity
 class DBQuery:
     """Queries the database for the state tracker."""
 
@@ -18,7 +31,7 @@ class DBQuery:
             database (dict): The database in the format dict(long: dict)
         """
 
-        self.database = database
+        self.db = database
         # {frozenset: {string: int}} A dict of dicts
         self.cached_db_slot = defaultdict(dict)
         # {frozenset: {'#': {'slot': 'value'}}} A dict of dicts of dicts, a dict of DB sub-dicts
@@ -104,7 +117,12 @@ class DBQuery:
         # Filter non-queryable items and keys with the value 'anything' since those are inconsequential to the constraints
         new_constraints = {k: v for k, v in constraints.items() if k not in self.no_query and v is not 'anything'}
 
-        inform_items = frozenset(new_constraints.items())
+        tuple_new_constraint=copy.deepcopy(new_constraints)
+        print(tuple_new_constraint)
+        inform_items ={k:tuple(v) for k,v in tuple_new_constraint.items()}.items()
+        inform_items = frozenset(inform_items)
+
+        # inform_items = frozenset(new_constraints.items())
         cache_return = self.cached_db[inform_items]
 
         if cache_return == None:
@@ -116,27 +134,34 @@ class DBQuery:
         # else continue on
 
         available_options = {}
-        for id in self.database.keys():
-            current_option_dict = self.database[id]
-            # First check if that database item actually contains the inform keys
-            # Note: this assumes that if a constraint is not found in the db item then that item is not a match
-            if len(set(new_constraints.keys()) - set(self.database[id].keys())) == 0:
-                match = True
-                # Now check all the constraint values against the db values and if there is a mismatch don't store
-                for k, v in new_constraints.items():
-                    if str(v).lower() != str(current_option_dict[k]).lower():
-                        match = False
-                if match:
-                    # Update cache
-                    self.cached_db[inform_items].update({id: current_option_dict})
-                    available_options.update({id: current_option_dict})
+        regex_constraint = self.convert_to_regex_constraint(new_constraints)
+        results = self.db.activities.find(regex_constraint)
+        for result in results:
+            available_options.update({str(result['_id']):result})
+            self.cached_db[inform_items].update({str(result['_id']): result})
+
+
+
+        # for id in self.database.keys():
+        #     current_option_dict = self.database[id]
+        #     # First check if that database item actually contains the inform keys
+        #     # Note: this assumes that if a constraint is not found in the db item then that item is not a match
+        #     if len(set(new_constraints.keys()) - set(self.database[id].keys())) == 0:
+        #         match = True
+        #         # Now check all the constraint values against the db values and if there is a mismatch don't store
+        #         for k, v in new_constraints.items():
+        #             if str(v).lower() != str(current_option_dict[k]).lower():
+        #                 match = False
+        #         if match:
+        #             # Update cache
+        #             self.cached_db[inform_items].update({id: current_option_dict})
+        #             available_options.update({id: current_option_dict})
 
         # if nothing available then set the set of constraint items to none in cache
         if not available_options:
             self.cached_db[inform_items] = None
 
         return available_options
-
     def get_db_results_for_slots(self, current_informs):
         """
         Counts occurrences of each current inform slot (key and value) in the database items.
@@ -152,8 +177,13 @@ class DBQuery:
         """
 
         # The items (key, value) of the current informs are used as a key to the cached_db_slot
-        inform_items = frozenset(current_informs.items())
-        # A dict of the inform keys and their counts as stored (or not stored) in the cached_db_slot
+        # print()
+        print(type(self.cached_db_slot))
+        tuple_current_informs=copy.deepcopy(current_informs)
+        print(tuple_current_informs)
+        inform_items ={k:tuple(v) for k,v in tuple_current_informs.items()}.items()
+        inform_items = frozenset(inform_items)
+        # # A dict of the inform keys and their counts as stored (or not stored) in the cached_db_slot
         cache_return = self.cached_db_slot[inform_items]
         temp_current_informs=copy.deepcopy(current_informs)
         if cache_return:
@@ -172,17 +202,30 @@ class DBQuery:
                 continue
             # If anything all_slots_match stays true AND the specific key slot gets a +1
             if CI_value == 'anything':
-                db_results[CI_key] = db.activities.count()
+                db_results[CI_key] = self.db.activities.count()
                 del temp_current_informs[CI_key]
                 continue
-            db_results[CI_key]=db.activities.count({CI_key:CI_value})
+            db_results[CI_key]=self.db.activities.count(self.convert_to_regex_constraint({CI_key:CI_value}))
             print(CI_key)
             print(db_results[CI_key])
             
-        current_informs_constraint={k:v.lower() for k,v in temp_current_informs.items()}
-        db_results['matching_all_constraints'] = db.activities.count(temp_current_informs)
+        # current_informs_constraint={k:v.lower() for k,v in temp_current_informs.items()}
+        db_results['matching_all_constraints'] = self.db.activities.count(self.convert_to_regex_constraint(temp_current_informs))
         
         # update cache (set the empty dict)
         self.cached_db_slot[inform_items].update(db_results)
         assert self.cached_db_slot[inform_items] == db_results
         return db_results
+    def convert_to_regex_constraint(self, constraints):
+        regex_constraint_dict = {}
+        for k,values in constraints.items():
+            list_pat = []
+            for value in values:
+                list_pat.append(re.compile(".*{0}.*".format(value)))
+            regex_constraint_dict[k] = {"$all":list_pat}
+        return regex_constraint_dict
+# from pymongo import MongoClient
+# client = MongoClient('mongodb://caochanhduong:bikhungha1@ds261626.mlab.com:61626/activity?retryWrites=false')
+# database = client.activity
+# dbquery = DBQuery(database)
+# print(dbquery.get_db_results({"works":["tán gái","cua gái"], "ward":["hưng thạnh"]}))

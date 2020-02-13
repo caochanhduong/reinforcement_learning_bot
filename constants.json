@@ -2,7 +2,7 @@
   "db_file_paths": {
     "database": "data/activity_db.json",
     "dict": "data/activity_dict.json",
-    "user_goals": "data/activity_user_goals.json"
+    "user_goals": "activity_user_goals.json"
   },
   "run": {
     "usersim": true,
