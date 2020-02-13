@@ -101,8 +101,12 @@ class StateTracker:
         # Encode last agent inform slots
         agent_inform_slots_rep = np.zeros((self.num_slots,))
         if last_agent_action:
+            # print(last_agent_action['inform_slots'].keys())
+            # print(self.slots_dict)
+            # print(self.num_slots)
             for key in last_agent_action['inform_slots'].keys():
-                agent_inform_slots_rep[self.slots_dict[key]] = 1.0
+                if key in self.slots_dict.keys():
+                    agent_inform_slots_rep[self.slots_dict[key]] = 1.0
 
         # Encode last agent request slots
         agent_request_slots_rep = np.zeros((self.num_slots,))

@@ -8,18 +8,18 @@ from flask_cors import CORS
 import re
 from pymongo import MongoClient
 
-app = Flask(__name__)
-CORS(app)
+# app = Flask(__name__)
+# CORS(app)
 
-app.config["MONGO_URI"] = "mongodb://caochanhduong:bikhungha1@ds261626.mlab.com:61626/activity?retryWrites=false"
-mongo = PyMongo(app)
-
-
+# app.config["MONGO_URI"] = "mongodb://caochanhduong:bikhungha1@ds261626.mlab.com:61626/activity?retryWrites=false"
+# mongo = PyMongo(app)
 
 
-client = MongoClient()
-client = MongoClient('mongodb://caochanhduong:bikhungha1@ds261626.mlab.com:61626/activity?retryWrites=false')
-db = client.activity
+
+
+# client = MongoClient()
+# client = MongoClient('mongodb://caochanhduong:bikhungha1@ds261626.mlab.com:61626/activity?retryWrites=false')
+# db = client.activity
 class DBQuery:
     """Queries the database for the state tracker."""
 
@@ -31,7 +31,7 @@ class DBQuery:
             database (dict): The database in the format dict(long: dict)
         """
 
-        self.database = database
+        self.db = database
         # {frozenset: {string: int}} A dict of dicts
         self.cached_db_slot = defaultdict(dict)
         # {frozenset: {'#': {'slot': 'value'}}} A dict of dicts of dicts, a dict of DB sub-dicts
@@ -129,7 +129,7 @@ class DBQuery:
         # else continue on
 
         available_options = {}
-        results = mongo.db.activities.find(new_constraints)
+        results = self.db.activities.find(new_constraints)
         for result in results:
             available_options.update({str(result['_id']):result})
             self.cached_db[inform_items].update({str(result['_id']): result})
@@ -191,15 +191,15 @@ class DBQuery:
                 continue
             # If anything all_slots_match stays true AND the specific key slot gets a +1
             if CI_value == 'anything':
-                db_results[CI_key] = db.activities.count()
+                db_results[CI_key] = self.db.activities.count()
                 del temp_current_informs[CI_key]
                 continue
-            db_results[CI_key]=db.activities.count({CI_key:CI_value.lower()})
-            print(CI_key)
-            print(db_results[CI_key])
+            db_results[CI_key]=self.db.activities.count({CI_key:CI_value.lower()})
+            # print(CI_key)
+            # print(db_results[CI_key])
             
         current_informs_constraint={k:v.lower() for k,v in temp_current_informs.items()}
-        db_results['matching_all_constraints'] = db.activities.count(temp_current_informs)
+        db_results['matching_all_constraints'] = self.db.activities.count(temp_current_informs)
         
         # update cache (set the empty dict)
         self.cached_db_slot[inform_items].update(db_results)
