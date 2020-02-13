@@ -175,7 +175,7 @@ class DBQuery:
                 db_results[CI_key] = db.activities.count()
                 del temp_current_informs[CI_key]
                 continue
-            db_results[CI_key]=db.activities.count({CI_key:CI_value.lower()})
+            db_results[CI_key]=db.activities.count({CI_key:CI_value})
             print(CI_key)
             print(db_results[CI_key])
             
