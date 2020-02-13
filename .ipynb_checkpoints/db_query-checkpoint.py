@@ -176,8 +176,8 @@ class DBQuery:
                 del temp_current_informs[CI_key]
                 continue
             db_results[CI_key]=db.activities.count({CI_key:CI_value.lower()})
-            print(CI_key)
-            print(db_results[CI_key])
+            # print(CI_key)
+            # print(db_results[CI_key])
             
         current_informs_constraint={k:v.lower() for k,v in temp_current_informs.items()}
         db_results['matching_all_constraints'] = db.activities.count(temp_current_informs)

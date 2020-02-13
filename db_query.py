@@ -118,7 +118,7 @@ class DBQuery:
         new_constraints = {k: v for k, v in constraints.items() if k not in self.no_query and v is not 'anything'}
 
         tuple_new_constraint=copy.deepcopy(new_constraints)
-        print(tuple_new_constraint)
+        # print(tuple_new_constraint)
         inform_items ={k:tuple(v) for k,v in tuple_new_constraint.items()}.items()
         inform_items = frozenset(inform_items)
 
@@ -178,9 +178,9 @@ class DBQuery:
 
         # The items (key, value) of the current informs are used as a key to the cached_db_slot
         # print()
-        print(type(self.cached_db_slot))
+        # print(type(self.cached_db_slot))
         tuple_current_informs=copy.deepcopy(current_informs)
-        print(tuple_current_informs)
+        # print(tuple_current_informs)
         inform_items ={k:tuple(v) for k,v in tuple_current_informs.items()}.items()
         inform_items = frozenset(inform_items)
         # # A dict of the inform keys and their counts as stored (or not stored) in the cached_db_slot
@@ -206,8 +206,8 @@ class DBQuery:
                 del temp_current_informs[CI_key]
                 continue
             db_results[CI_key]=self.db.activities.count(self.convert_to_regex_constraint({CI_key:CI_value}))
-            print(CI_key)
-            print(db_results[CI_key])
+            # print(CI_key)
+            # print(db_results[CI_key])
             
         # current_informs_constraint={k:v.lower() for k,v in temp_current_informs.items()}
         db_results['matching_all_constraints'] = self.db.activities.count(self.convert_to_regex_constraint(temp_current_informs))
