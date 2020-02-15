@@ -12,7 +12,7 @@ from pymongo import MongoClient
 
 client = MongoClient()
 client = MongoClient('mongodb://caochanhduong:bikhungha1@ds261626.mlab.com:61626/activity?retryWrites=false')
-db = client.activity
+database = client.activity
 
 if __name__ == "__main__":
     # Can provide constants file path in args OR run it as is and change 'CONSTANTS_FILE_PATH' below
@@ -53,11 +53,11 @@ if __name__ == "__main__":
     remove_empty_slots(database)
 
     # Load movie dict
-    db_dct=None
-    for item in db.dictionary.find({}):
-        db_dct=item
-    if '_id' in list(db_dct.keys()):
-        del db_dct['_id']
+    db_dict=None
+    for item in database.dictionary.find({}):
+        db_dict=item
+    if '_id' in list(db_dict.keys()):
+        del db_dict['_id']
 
     # Load goal file
     user_goals = pickle.load(open(USER_GOALS_FILE_PATH, 'rb'), encoding='latin1')

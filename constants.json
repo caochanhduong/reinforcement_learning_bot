@@ -6,8 +6,8 @@
   },
   "run": {
     "usersim": true,
-    "warmup_mem": 700,
-    "num_ep_run": 500,
+    "warmup_mem": 7,
+    "num_ep_run": 5,
     "train_freq": 100,
     "max_round_num": 20,
     "success_rate_threshold": 0.3

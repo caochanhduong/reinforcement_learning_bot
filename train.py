@@ -108,6 +108,7 @@ def warmup_run():
     total_step = 0
     while total_step != WARMUP_MEM and not dqn_agent.is_memory_full():
         # Reset episode
+        print("total step: {}".format(total_step))
         episode_reset()
         done = False
         # Get initial state from state tracker

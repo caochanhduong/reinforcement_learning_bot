@@ -90,12 +90,19 @@ class DBQuery:
         """
  
         slot_values = defaultdict(int)  # init to 0
+        # print(slot_values)
         for id in db_subdict.keys():
             current_option_dict = db_subdict[id]
             # If there is a match
             if key in current_option_dict.keys():
                 slot_value = current_option_dict[key]
+                # print(slot_value)
+                if any(isinstance(i,list) for i in slot_value):
+                  slot_value = [value for sub_list in slot_value for value in sub_list]
+
+          
                 tp_slot_value = tuple(slot_value)
+                # print(type(tp_slot_value))
                 # This will add 1 to 0 if this is the first time this value has been encountered, or it will add 1
                 # to whatever was already in there
                 slot_values[tp_slot_value] += 1
